@@ -160,25 +160,31 @@ document.getElementById('bio')?.addEventListener('input', (e) => {
   updatePreview();
 });
 
-// ── Avatar URL set
-document.getElementById('setAvatarUrlBtn')?.addEventListener('click', async () => {
-  const url = document.getElementById('avatarUrlInput').value.trim();
-  if (!url) { toast('Enter a valid image URL', 'error'); return; }
-  try {
-    await saveUser({ avatar: url });
-    document.getElementById('avatarImg').src = url;
-    document.getElementById('avatarImg').style.display = 'block';
-    document.getElementById('avatarPlaceholder').style.display = 'none';
-    document.getElementById('pfAvatar').src = url;
-    document.getElementById('pfAvatar').style.display = 'block';
-    document.getElementById('pfAvatarPlaceholder').style.display = 'none';
-    toast('Avatar updated!');
-    updatePreview();
-  } catch (err) { toast('Failed to update avatar', 'error'); }
-});
-
+// ── Avatar Upload
 document.getElementById('uploadAvatarBtn')?.addEventListener('click', () => {
   document.getElementById('avatarInput').click();
+});
+
+document.getElementById('avatarInput')?.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async function (event) {
+    const base64 = event.target.result;
+    try {
+      await saveUser({ avatar: base64 });
+      document.getElementById('avatarImg').src = base64;
+      document.getElementById('avatarImg').style.display = 'block';
+      document.getElementById('avatarPlaceholder').style.display = 'none';
+      document.getElementById('pfAvatar').src = base64;
+      document.getElementById('pfAvatar').style.display = 'block';
+      document.getElementById('pfAvatarPlaceholder').style.display = 'none';
+      toast('Avatar updated!');
+      updatePreview();
+    } catch { toast('Failed to update avatar', 'error'); }
+  };
+  reader.readAsDataURL(file);
 });
 
 document.getElementById('removeAvatarBtn')?.addEventListener('click', async () => {
