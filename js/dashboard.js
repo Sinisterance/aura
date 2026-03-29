@@ -3,6 +3,9 @@
    Uses Table API instead of Node/Express backend
    ============================== */
 
+const SUPABASE_URL = 'https://yggjpzjzlwxufocarpdh.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_YB6MUcbACGs4vkx25ZUazA_GeaHO3dO';
+
 let userData = null;
 let editingLinkIndex = null;
 
@@ -34,12 +37,12 @@ async function loadUser() {
 
 function applyUserData() {
   const u = userData;
-  const links = AuraAPI.parseJSON(u.socialLinks, []);
+  const links = AuraAPI.parseJSON(u.social_links, []);
   const bg = AuraAPI.parseJSON(u.background, { type: 'color', value: '#07070d' });
   const music = AuraAPI.parseJSON(u.music, { enabled: false });
 
   // Profile tab
-  document.getElementById('displayName').value = u.displayName || '';
+  document.getElementById('displayName').value = u.display_name || '';
   document.getElementById('bio').value = u.bio || '';
   document.getElementById('badge').value = u.badge || '';
   document.getElementById('bioCount').textContent = (u.bio || '').length;
@@ -58,7 +61,7 @@ function applyUserData() {
     document.getElementById('pfAvatar').style.display = 'block';
     document.getElementById('pfAvatarPlaceholder').style.display = 'none';
   } else {
-    const letter = (u.displayName || u.username || '?')[0].toUpperCase();
+    const letter = (u.display_name || u.username || '?')[0].toUpperCase();
     document.getElementById('avatarPlaceholder').textContent = letter;
     document.getElementById('pfAvatarPlaceholder').textContent = letter;
     document.getElementById('avatarImg').style.display = 'none';
@@ -74,8 +77,8 @@ function applyUserData() {
   document.getElementById('gradAngle').value = bg.gradientAngle || 135;
   document.getElementById('gradAngleVal').textContent = bg.gradientAngle || 135;
   document.getElementById('bgImageUrl').value = bg.imageUrl || '';
-  document.getElementById('accentColor').value = u.accentColor || '#7c3aed';
-  document.getElementById('profileEffect').value = u.profileEffect || 'none';
+  document.getElementById('accentColor').value = u.accent_color || '#7c3aed';
+  document.getElementById('profileEffect').value = u.profile_effect || 'none';
 
   // Set active bg tab
   const bgType = bg.type || 'color';
@@ -84,7 +87,7 @@ function applyUserData() {
 
   // Card style
   document.querySelectorAll('.card-style-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.style === (u.cardStyle || 'glass'));
+    b.classList.toggle('active', b.dataset.style === (u.card_style || 'glass'));
   });
 
   // Admin link
@@ -111,9 +114,8 @@ function applyUserData() {
 
 // ── Save updated user to API
 async function saveUser(updates) {
-  const updated = await AuraAPI.updateUser(userData.id, updates);
+  await AuraAPI.updateUser(userData.id, updates);
   userData = { ...userData, ...updates };
-  return updated;
 }
 
 // ── Tab Navigation
@@ -166,9 +168,6 @@ document.getElementById('avatarInput')?.addEventListener('change', async (e) => 
   try {
     toast('Uploading...', 'success');
 
-    const SUPABASE_URL = 'https://yggjpzjzlwxufocarpdh.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_YB6MUcbACGs4vkx25ZUazA_GeaHO3dO';
-
     const fileName = `${userData.id}_${Date.now()}.${file.name.split('.').pop()}`;
     const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/avatars/${fileName}`, {
       method: 'POST',
@@ -203,7 +202,7 @@ document.getElementById('avatarInput')?.addEventListener('change', async (e) => 
 document.getElementById('removeAvatarBtn')?.addEventListener('click', async () => {
   try {
     await saveUser({ avatar: '' });
-    const letter = (userData.displayName || userData.username || '?')[0].toUpperCase();
+    const letter = (userData.display_name || userData.username || '?')[0].toUpperCase();
     document.getElementById('avatarImg').style.display = 'none';
     document.getElementById('avatarPlaceholder').textContent = letter;
     document.getElementById('avatarPlaceholder').style.display = 'flex';
@@ -219,7 +218,7 @@ document.getElementById('removeAvatarBtn')?.addEventListener('click', async () =
 document.getElementById('saveProfileBtn')?.addEventListener('click', async () => {
   try {
     await saveUser({
-      displayName: document.getElementById('displayName').value.trim(),
+      display_name: document.getElementById('displayName').value.trim(),
       bio: document.getElementById('bio').value.trim(),
       badge: document.getElementById('badge').value.trim()
     });
@@ -277,7 +276,7 @@ document.getElementById('cancelLinkBtn')?.addEventListener('click', () => {
 
 window.editLink = function(i) {
   editingLinkIndex = i;
-  const links = AuraAPI.parseJSON(userData.socialLinks, []);
+  const links = AuraAPI.parseJSON(userData.social_links, []);
   const link = links[i];
   document.getElementById('linkModalTitle').textContent = 'Edit Link';
   document.getElementById('linkPlatform').value = link.platform || 'custom';
@@ -288,7 +287,7 @@ window.editLink = function(i) {
 
 window.deleteLink = async function(i) {
   if (!confirm('Delete this link?')) return;
-  const links = AuraAPI.parseJSON(userData.socialLinks, []);
+  const links = AuraAPI.parseJSON(userData.social_links, []);
   links.splice(i, 1);
   await saveLinks(links);
 };
@@ -308,7 +307,7 @@ document.getElementById('saveLinkBtn')?.addEventListener('click', async () => {
 
   if (!url) { toast('URL is required', 'error'); return; }
 
-  const links = AuraAPI.parseJSON(userData.socialLinks, []);
+  const links = AuraAPI.parseJSON(userData.social_links, []);
   const link = { platform, label: label || platform, url };
 
   if (editingLinkIndex !== null) {
@@ -324,7 +323,7 @@ document.getElementById('saveLinkBtn')?.addEventListener('click', async () => {
 
 async function saveLinks(links) {
   try {
-    await saveUser({ socialLinks: JSON.stringify(links) });
+    await saveUser({ social_links: JSON.stringify(links) });
     renderLinks();
     updatePreview();
     toast('Links saved!');
@@ -388,9 +387,9 @@ document.getElementById('saveAppearanceBtn')?.addEventListener('click', async ()
   try {
     await saveUser({
       background: JSON.stringify(bgObj),
-      accentColor: document.getElementById('accentColor').value,
-      cardStyle,
-      profileEffect: document.getElementById('profileEffect').value
+      accent_color: document.getElementById('accentColor').value,
+      card_style: cardStyle,
+      profile_effect: document.getElementById('profileEffect').value
     });
     toast('Appearance saved!');
     updatePreview();
@@ -486,7 +485,7 @@ function updatePreview() {
 
   // Links
   const pfLinks = document.getElementById('pfLinks');
-  const links = AuraAPI.parseJSON(userData.socialLinks, []);
+  const links = AuraAPI.parseJSON(userData.social_links, []);
   pfLinks.innerHTML = links.slice(0, 5).map(link => {
     const icon = platformIcons[link.platform] || platformIcons.custom;
     return `<div class="pf-link-btn" style="border-color:${accent}30"><i class="${icon}" style="color:${accent}"></i> ${link.label || link.platform}</div>`;
