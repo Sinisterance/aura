@@ -189,16 +189,20 @@
   <script>
     function copyInvite(code) {
       navigator.clipboard.writeText(code).then(() => {
-        alert('Copied: ' + code);
+        window.alert('Copied: ' + code);
       });
+    }
+
+    function showAlert(msg, type) {
+      const el = document.getElementById('setupAlert');
+      el.textContent = msg;
+      el.className = 'alert ' + type + ' show';
     }
 
     document.getElementById('setupForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('setupBtn');
-      const alert = document.getElementById('setupAlert');
-      alert.className = 'alert';
-      alert.style.display = 'none';
+      document.getElementById('setupAlert').className = 'alert';
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
 
@@ -208,20 +212,51 @@
         const password = document.getElementById('setupPassword').value;
         const inviteCode = document.getElementById('setupInvite').value.trim();
 
-        // Register user
-        const { user } = await AuraAPI.register({ username, email, password, inviteCode });
+        // Bypass reserved check for setup page - create user directly
+        if (!/^[a-z0-9_.-]+$/i.test(username)) throw new Error('Username can only contain letters, numbers, underscores, dots, and hyphens');
+        if (username.length < 3 || username.length > 30) throw new Error('Username must be between 3 and 30 characters');
+        if (password.length < 8) throw new Error('Password must be at least 8 characters');
 
-        // Promote to admin
-        await AuraAPI.updateUser(user.id, { role: 'admin' });
+        const invite = await AuraAPI.getInviteByCode(inviteCode);
+        if (!invite || !invite.is_active) throw new Error('Invalid or inactive invite code');
 
-        alert.textContent = '✓ Admin account created! Redirecting to dashboard...';
-        alert.className = 'alert success show';
+        const existingByName = await AuraAPI.getUserByUsername(username);
+        if (existingByName) throw new Error('Username already taken');
+        const existingByEmail = await AuraAPI.getUserByEmail(email);
+        if (existingByEmail) throw new Error('Email already registered');
+
+        const user = await AuraAPI.createUser({
+          username: username.toLowerCase(),
+          email: email.toLowerCase(),
+          password: AuraAPI.hashPassword(password),
+          display_name: username,
+          bio: '',
+          badge: 'Owner',
+          avatar: '',
+          role: 'admin',
+          social_links: '[]',
+          background: JSON.stringify({ type: 'color', value: '#000000' }),
+          accent_color: '#7c3aed',
+          card_style: 'glass',
+          profile_effect: 'none',
+          music: JSON.stringify({ enabled: false, url: '', title: '', artist: '', autoplay: false }),
+          views: 0,
+          is_active: true,
+          invite_used: inviteCode.toUpperCase()
+        });
+
+        await AuraAPI.updateInvite(invite.id, { used_count: (invite.used_count || 0) + 1 });
+
+        const token = AuraAPI.generateToken(user.id, 'admin');
+        localStorage.setItem('aura_token', token);
+        localStorage.setItem('aura_uid', user.id);
+
+        showAlert('✓ Admin account created! Redirecting...', 'success');
         btn.innerHTML = '<i class="fas fa-check"></i> Done!';
-
         setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+
       } catch (err) {
-        alert.textContent = '✗ ' + err.message;
-        alert.className = 'alert error show';
+        showAlert('✗ ' + err.message, 'error');
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-magic"></i> Create Admin Account';
       }
