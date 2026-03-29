@@ -169,22 +169,41 @@ document.getElementById('avatarInput')?.addEventListener('change', async (e) => 
   const file = e.target.files[0];
   if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = async function (event) {
-    const base64 = event.target.result;
-    try {
-      await saveUser({ avatar: base64 });
-      document.getElementById('avatarImg').src = base64;
-      document.getElementById('avatarImg').style.display = 'block';
-      document.getElementById('avatarPlaceholder').style.display = 'none';
-      document.getElementById('pfAvatar').src = base64;
-      document.getElementById('pfAvatar').style.display = 'block';
-      document.getElementById('pfAvatarPlaceholder').style.display = 'none';
-      toast('Avatar updated!');
-      updatePreview();
-    } catch { toast('Failed to update avatar', 'error'); }
-  };
-  reader.readAsDataURL(file);
+  try {
+    toast('Uploading...', 'success');
+
+    const SUPABASE_URL = 'https://yggjpzjzlwxufocarpdh.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_YB6MUcbACGs4vkx25ZUazA_GeaHO3dO';
+
+    const fileName = `${userData.id}_${Date.now()}.${file.name.split('.').pop()}`;
+    const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/avatars/${fileName}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': file.type,
+        'x-upsert': 'true'
+      },
+      body: file
+    });
+
+    if (!uploadRes.ok) throw new Error('Upload failed');
+
+    const url = `${SUPABASE_URL}/storage/v1/object/public/avatars/${fileName}`;
+
+    await AuraAPI.updateUser(userData.id, { avatar: url });
+    userData.avatar = url;
+
+    document.getElementById('avatarImg').src = url;
+    document.getElementById('avatarImg').style.display = 'block';
+    document.getElementById('avatarPlaceholder').style.display = 'none';
+    document.getElementById('pfAvatar').src = url;
+    document.getElementById('pfAvatar').style.display = 'block';
+    document.getElementById('pfAvatarPlaceholder').style.display = 'none';
+    toast('Avatar updated!');
+    updatePreview();
+
+  } catch { toast('Failed to upload avatar', 'error'); }
 });
 
 document.getElementById('removeAvatarBtn')?.addEventListener('click', async () => {
