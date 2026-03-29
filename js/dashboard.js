@@ -178,8 +178,7 @@ document.getElementById('setAvatarUrlBtn')?.addEventListener('click', async () =
 });
 
 document.getElementById('uploadAvatarBtn')?.addEventListener('click', () => {
-  document.getElementById('avatarUrlInput').focus();
-  toast('Paste an image URL in the field below', 'success');
+  document.getElementById('avatarInput').click();
 });
 
 document.getElementById('removeAvatarBtn')?.addEventListener('click', async () => {
