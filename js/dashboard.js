@@ -1,6 +1,5 @@
 /* ==============================
    AURA - Dashboard JS
-   Uses Table API instead of Node/Express backend
    ============================== */
 
 const SUPABASE_URL = 'https://yggjpzjzlwxufocarpdh.supabase.co';
@@ -19,7 +18,6 @@ const platformIcons = {
   custom: 'fas fa-link'
 };
 
-// ── Toast notification
 function toast(msg, type = 'success') {
   const el = document.getElementById('toast');
   const icon = type === 'success' ? '✓' : '✗';
@@ -28,7 +26,6 @@ function toast(msg, type = 'success') {
   setTimeout(() => el.classList.remove('show'), 3500);
 }
 
-// ── Load user data
 async function loadUser() {
   userData = await AuraAPI.requireAuth();
   if (!userData) return;
@@ -41,18 +38,13 @@ function applyUserData() {
   const bg = AuraAPI.parseJSON(u.background, { type: 'color', value: '#07070d' });
   const music = AuraAPI.parseJSON(u.music, { enabled: false });
 
-  // Profile tab
   document.getElementById('displayName').value = u.display_name || '';
   document.getElementById('bio').value = u.bio || '';
   document.getElementById('badge').value = u.badge || '';
   document.getElementById('bioCount').textContent = (u.bio || '').length;
   document.getElementById('profileUrlUsername').textContent = u.username;
+  document.getElementById('viewProfileBtn').href = `profile.html?u=${u.username}`;
 
-  // View Profile link — use profile.html?u=username
-  const profileHref = `profile.html?u=${u.username}`;
-  document.getElementById('viewProfileBtn').href = profileHref;
-
-  // Avatar
   if (u.avatar) {
     document.getElementById('avatarImg').src = u.avatar;
     document.getElementById('avatarImg').style.display = 'block';
@@ -70,7 +62,6 @@ function applyUserData() {
     document.getElementById('pfAvatarPlaceholder').style.display = 'flex';
   }
 
-  // Appearance
   document.getElementById('bgColor').value = bg.value || '#07070d';
   document.getElementById('gradStart').value = bg.gradientStart || '#0a0a2e';
   document.getElementById('gradEnd').value = bg.gradientEnd || '#1a0a3e';
@@ -80,29 +71,21 @@ function applyUserData() {
   document.getElementById('accentColor').value = u.accent_color || '#7c3aed';
   document.getElementById('profileEffect').value = u.profile_effect || 'none';
 
-  // Set active bg tab
   const bgType = bg.type || 'color';
   document.querySelectorAll('.bg-tab').forEach(t => t.classList.toggle('active', t.dataset.type === bgType));
   document.querySelectorAll('.bg-option').forEach(o => o.classList.toggle('active', o.id === `bg-${bgType}`));
-
-  // Card style
   document.querySelectorAll('.card-style-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.style === (u.card_style || 'glass'));
   });
 
-  // Admin link
-  if (u.role === 'admin') {
-    document.getElementById('adminLink').style.display = 'flex';
-  }
+  if (u.role === 'admin') document.getElementById('adminLink').style.display = 'flex';
 
-  // Music
   document.getElementById('musicEnabled').checked = music.enabled || false;
   document.getElementById('musicUrl').value = music.url || '';
   document.getElementById('musicTitle').value = music.title || '';
   document.getElementById('musicArtist').value = music.artist || '';
   document.getElementById('musicAutoplay').checked = music.autoplay || false;
 
-  // Analytics
   document.getElementById('statViews').textContent = (u.views || 0).toLocaleString();
   document.getElementById('statLinks').textContent = links.length;
   document.getElementById('statJoined').textContent = new Date(u.created_at).toLocaleDateString('en', { month: 'short', year: 'numeric' });
@@ -112,7 +95,6 @@ function applyUserData() {
   updatePreview();
 }
 
-// ── Save updated user to API
 async function saveUser(updates) {
   await AuraAPI.updateUser(userData.id, updates);
   userData = { ...userData, ...updates };
@@ -131,7 +113,6 @@ document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
   });
 });
 
-// ── Mobile sidebar
 document.getElementById('sidebarToggle')?.addEventListener('click', () => {
   document.getElementById('sidebar').classList.toggle('open');
 });
@@ -144,19 +125,17 @@ document.getElementById('closePreviewBtn')?.addEventListener('click', () => {
   document.getElementById('previewPanel').classList.remove('mobile-visible');
 });
 
-// ── Logout
 document.getElementById('logoutBtn')?.addEventListener('click', () => {
   AuraAPI.logout();
   window.location.href = 'index.html';
 });
 
-// ── Bio char counter
 document.getElementById('bio')?.addEventListener('input', (e) => {
   document.getElementById('bioCount').textContent = e.target.value.length;
   updatePreview();
 });
 
-// ── Avatar Upload
+// ── Avatar
 document.getElementById('uploadAvatarBtn')?.addEventListener('click', () => {
   document.getElementById('avatarInput').click();
 });
@@ -164,10 +143,8 @@ document.getElementById('uploadAvatarBtn')?.addEventListener('click', () => {
 document.getElementById('avatarInput')?.addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
-
   try {
     toast('Uploading...', 'success');
-
     const fileName = `${userData.id}_${Date.now()}.${file.name.split('.').pop()}`;
     const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/avatars/${fileName}`, {
       method: 'POST',
@@ -179,14 +156,10 @@ document.getElementById('avatarInput')?.addEventListener('change', async (e) => 
       },
       body: file
     });
-
     if (!uploadRes.ok) throw new Error('Upload failed');
-
     const url = `${SUPABASE_URL}/storage/v1/object/public/avatars/${fileName}`;
-
     await AuraAPI.updateUser(userData.id, { avatar: url });
     userData.avatar = url;
-
     document.getElementById('avatarImg').src = url;
     document.getElementById('avatarImg').style.display = 'block';
     document.getElementById('avatarPlaceholder').style.display = 'none';
@@ -195,7 +168,6 @@ document.getElementById('avatarInput')?.addEventListener('change', async (e) => 
     document.getElementById('pfAvatarPlaceholder').style.display = 'none';
     toast('Avatar updated!');
     updatePreview();
-
   } catch (err) { console.error('Avatar upload error:', err); toast('Failed to upload avatar', 'error'); }
 });
 
@@ -227,22 +199,19 @@ document.getElementById('saveProfileBtn')?.addEventListener('click', async () =>
   } catch { toast('Failed to save profile', 'error'); }
 });
 
-// ── Copy profile link
 document.getElementById('copyLinkBtn')?.addEventListener('click', () => {
   const url = `${window.location.origin}${window.location.pathname.replace('dashboard.html', '')}profile.html?u=${userData?.username}`;
   navigator.clipboard.writeText(url).then(() => toast('Link copied!'));
 });
 
-// ── Links Management
+// ── Links
 function renderLinks() {
   const list = document.getElementById('linksList');
-  const links = AuraAPI.parseJSON(userData?.socialLinks, []);
-
+  const links = AuraAPI.parseJSON(userData?.social_links, []);
   if (!links.length) {
     list.innerHTML = `<div class="empty-links"><i class="fas fa-link fa-2x"></i><p>No links yet. Add your first one!</p></div>`;
     return;
   }
-
   list.innerHTML = links.map((link, i) => {
     const icon = platformIcons[link.platform] || platformIcons.custom;
     return `
@@ -256,8 +225,7 @@ function renderLinks() {
           <button class="icon-btn" onclick="editLink(${i})" title="Edit"><i class="fas fa-edit"></i></button>
           <button class="icon-btn danger" onclick="deleteLink(${i})" title="Delete"><i class="fas fa-trash"></i></button>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 }
 
@@ -295,27 +263,18 @@ window.deleteLink = async function(i) {
 document.getElementById('linkPlatform')?.addEventListener('change', (e) => {
   const plat = e.target.value;
   const label = document.getElementById('linkLabel');
-  if (plat !== 'custom') {
-    label.value = plat.charAt(0).toUpperCase() + plat.slice(1);
-  }
+  if (plat !== 'custom') label.value = plat.charAt(0).toUpperCase() + plat.slice(1);
 });
 
 document.getElementById('saveLinkBtn')?.addEventListener('click', async () => {
   const platform = document.getElementById('linkPlatform').value;
   const label = document.getElementById('linkLabel').value.trim();
   const url = document.getElementById('linkUrl').value.trim();
-
   if (!url) { toast('URL is required', 'error'); return; }
-
   const links = AuraAPI.parseJSON(userData.social_links, []);
   const link = { platform, label: label || platform, url };
-
-  if (editingLinkIndex !== null) {
-    links[editingLinkIndex] = link;
-  } else {
-    links.push(link);
-  }
-
+  if (editingLinkIndex !== null) links[editingLinkIndex] = link;
+  else links.push(link);
   await saveLinks(links);
   document.getElementById('linkModal').style.display = 'none';
   document.getElementById('statLinks').textContent = links.length;
@@ -373,7 +332,6 @@ document.querySelectorAll('.card-style-btn').forEach(btn => {
 document.getElementById('saveAppearanceBtn')?.addEventListener('click', async () => {
   const bgType = document.querySelector('.bg-tab.active')?.dataset.type || 'color';
   const cardStyle = document.querySelector('.card-style-btn.active')?.dataset.style || 'glass';
-
   const bgObj = {
     type: bgType,
     value: document.getElementById('bgColor').value,
@@ -383,7 +341,6 @@ document.getElementById('saveAppearanceBtn')?.addEventListener('click', async ()
     imageUrl: document.getElementById('bgImageUrl').value,
     animationType: document.getElementById('animationType').value
   };
-
   try {
     await saveUser({
       background: JSON.stringify(bgObj),
@@ -417,51 +374,38 @@ document.getElementById('saveMusicBtn')?.addEventListener('click', async () => {
   document.getElementById(id)?.addEventListener('change', updatePreview);
 });
 
-// ── Live Preview Update
+// ── Live Preview
 function updatePreview() {
   if (!userData) return;
-
   const bgType = document.querySelector('.bg-tab.active')?.dataset.type || 'color';
   const accent = document.getElementById('accentColor')?.value || '#7c3aed';
   const cardStyle = document.querySelector('.card-style-btn.active')?.dataset.style || 'glass';
   const effect = document.getElementById('profileEffect')?.value || 'none';
 
-  // BG
   const pfBg = document.getElementById('pfBg');
   switch (bgType) {
-    case 'color':
-      pfBg.style.background = document.getElementById('bgColor').value;
-      break;
+    case 'color': pfBg.style.background = document.getElementById('bgColor').value; break;
     case 'gradient': {
       const s = document.getElementById('gradStart').value;
       const e = document.getElementById('gradEnd').value;
       const a = document.getElementById('gradAngle').value;
-      pfBg.style.background = `linear-gradient(${a}deg, ${s}, ${e})`;
-      break;
+      pfBg.style.background = `linear-gradient(${a}deg, ${s}, ${e})`; break;
     }
     case 'image': {
       const url = document.getElementById('bgImageUrl').value;
-      pfBg.style.background = url ? `url(${url}) center/cover no-repeat` : '#07070d';
-      break;
+      pfBg.style.background = url ? `url(${url}) center/cover no-repeat` : '#07070d'; break;
     }
-    default:
-      pfBg.style.background = 'linear-gradient(135deg, #07070d, #1a0a2e)';
+    default: pfBg.style.background = 'linear-gradient(135deg, #07070d, #1a0a2e)';
   }
 
-  // Card style
   const pfCard = document.getElementById('pfCard');
   pfCard.className = `pf-card style-${cardStyle}`;
-  if (cardStyle === 'neon') pfCard.style.boxShadow = `0 0 30px ${accent}50`;
-  else pfCard.style.boxShadow = '';
+  pfCard.style.boxShadow = cardStyle === 'neon' ? `0 0 30px ${accent}50` : '';
 
-  // Profile effect
-  const pfEffect = document.getElementById('pfEffect');
-  pfEffect.className = `pf-effect ${effect !== 'none' ? effect : ''}`;
+  document.getElementById('pfEffect').className = `pf-effect ${effect !== 'none' ? effect : ''}`;
 
-  // Avatar
-  const av = userData.avatar;
-  if (av) {
-    document.getElementById('pfAvatar').src = av;
+  if (userData.avatar) {
+    document.getElementById('pfAvatar').src = userData.avatar;
     document.getElementById('pfAvatar').style.display = 'block';
     document.getElementById('pfAvatarPlaceholder').style.display = 'none';
   } else {
@@ -471,19 +415,15 @@ function updatePreview() {
     document.getElementById('pfAvatarPlaceholder').style.display = 'flex';
   }
 
-  // Name / bio / badge
   const displayName = document.getElementById('displayName')?.value || userData.username || 'User';
   const bio = document.getElementById('bio')?.value || '';
   const badge = document.getElementById('badge')?.value || '';
-
   document.getElementById('pfName').textContent = displayName;
   document.getElementById('pfBio').textContent = bio || 'No bio yet...';
-
   const pfBadge = document.getElementById('pfBadge');
   if (badge) { pfBadge.textContent = badge; pfBadge.style.display = 'block'; }
   else pfBadge.style.display = 'none';
 
-  // Links
   const pfLinks = document.getElementById('pfLinks');
   const links = AuraAPI.parseJSON(userData.social_links, []);
   pfLinks.innerHTML = links.slice(0, 5).map(link => {
@@ -492,14 +432,10 @@ function updatePreview() {
   }).join('');
   if (links.length > 5) pfLinks.innerHTML += `<div class="pf-link-btn" style="border-color:${accent}30;justify-content:center;color:var(--text-muted)">+${links.length - 5} more</div>`;
 
-  // Music
   const musicEnabled = document.getElementById('musicEnabled')?.checked;
-  const musicTitle = document.getElementById('musicTitle')?.value || 'Song Title';
-  const musicArtist = document.getElementById('musicArtist')?.value || 'Artist';
-  const pfMusicPlayer = document.getElementById('pfMusicPlayer');
-  pfMusicPlayer.style.display = musicEnabled ? 'flex' : 'none';
-  document.getElementById('pfMusicTitle').textContent = musicTitle;
-  document.getElementById('pfMusicArtist').textContent = musicArtist;
+  document.getElementById('pfMusicPlayer').style.display = musicEnabled ? 'flex' : 'none';
+  document.getElementById('pfMusicTitle').textContent = document.getElementById('musicTitle')?.value || 'Song Title';
+  document.getElementById('pfMusicArtist').textContent = document.getElementById('musicArtist')?.value || 'Artist';
 }
 
 // ── Init
