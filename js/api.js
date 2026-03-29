@@ -3,6 +3,7 @@
    ============================== */
 const SUPABASE_URL = 'https://yggjpzjzlwxufocarpdh.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_YB6MUcbACGs4vkx25ZUazA_GeaHO3dO';
+
 const sb = {
   async query(table, options = {}) {
     let url = `${SUPABASE_URL}/rest/v1/${table}`;
