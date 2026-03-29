@@ -2,9 +2,6 @@
    AURA - Dashboard JS
    ============================== */
 
-const SUPABASE_URL = 'https://yggjpzjzlwxufocarpdh.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_YB6MUcbACGs4vkx25ZUazA_GeaHO3dO';
-
 let userData = null;
 let editingLinkIndex = null;
 
