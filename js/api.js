@@ -1,18 +1,66 @@
 /* ==============================
-   AURA - Table API Helper
-   Replaces the Node/MongoDB backend
+   AURA - Supabase API Helper
    ============================== */
 
-const AuraAPI = {
-  // ── Base URL for tables
-  base: 'tables',
+const SUPABASE_URL = 'https://yggjpzjzlwxufocarpdh.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_YB6MUcbACGs4vkx25ZUazA_GeaHO3dO';
 
-  // ── Generate short unique ID
-  uid() {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const sb = {
+  async query(table, options = {}) {
+    let url = `${SUPABASE_URL}/rest/v1/${table}`;
+    const params = [];
+    if (options.select) params.push(`select=${options.select}`);
+    if (options.filter) params.push(options.filter);
+    if (options.limit) params.push(`limit=${options.limit}`);
+    if (options.offset) params.push(`offset=${options.offset}`);
+    if (options.order) params.push(`order=${options.order}`);
+    if (params.length) url += '?' + params.join('&');
+
+    const res = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': options.prefer || 'return=representation'
+      },
+      method: options.method || 'GET',
+      body: options.body ? JSON.stringify(options.body) : undefined
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'API error');
+    }
+
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
   },
 
-  // ── Simple password hash (base64 for demo; in production use bcrypt)
+  async get(table, filter = '') {
+    return this.query(table, { filter });
+  },
+
+  async getOne(table, filter) {
+    const data = await this.query(table, { filter, limit: 1 });
+    return data?.[0] || null;
+  },
+
+  async insert(table, body) {
+    return this.query(table, { method: 'POST', body, prefer: 'return=representation' });
+  },
+
+  async update(table, filter, body) {
+    return this.query(table, { method: 'PATCH', filter, body, prefer: 'return=representation' });
+  },
+
+  async remove(table, filter) {
+    return this.query(table, { method: 'DELETE', filter });
+  }
+};
+
+const AuraAPI = {
+
+  // ── Password helpers
   hashPassword(pw) {
     return btoa(encodeURIComponent(pw + '_aura_salt_2024'));
   },
@@ -21,107 +69,82 @@ const AuraAPI = {
     return this.hashPassword(pw) === hash;
   },
 
-  // ── Generate JWT-like token (simple, stored in localStorage)
+  // ── Token helpers
   generateToken(userId, role) {
     const payload = { id: userId, role, iat: Date.now() };
     return btoa(JSON.stringify(payload));
   },
 
   parseToken(token) {
-    try {
-      return JSON.parse(atob(token));
-    } catch {
-      return null;
-    }
+    try { return JSON.parse(atob(token)); } catch { return null; }
   },
 
-  // ── Get current user from token
   getCurrentUser() {
     const token = localStorage.getItem('aura_token');
     if (!token) return null;
     return this.parseToken(token);
   },
 
-  // ── Users API
+  // ── Users
   async getUsers(page = 1, limit = 20, search = '') {
-    let url = `${this.base}/users?page=${page}&limit=${limit}`;
-    if (search) url += `&search=${encodeURIComponent(search)}`;
-    const res = await fetch(url);
-    return res.json();
+    let filter = `limit=${limit}&offset=${(page - 1) * limit}&order=created_at.desc`;
+    if (search) filter += `&or=(username.ilike.*${search}*,email.ilike.*${search}*)`;
+    const data = await sb.query('users', { filter });
+    return { data: data || [] };
   },
 
   async getUserById(id) {
-    const res = await fetch(`${this.base}/users/${id}`);
-    if (!res.ok) return null;
-    return res.json();
+    return sb.getOne('users', `id=eq.${id}`);
   },
 
   async getUserByUsername(username) {
-    const res = await fetch(`${this.base}/users?search=${encodeURIComponent(username)}&limit=100`);
-    const data = await res.json();
-    return (data.data || []).find(u => u.username === username.toLowerCase()) || null;
+    return sb.getOne('users', `username=eq.${username.toLowerCase()}`);
   },
 
   async getUserByEmail(email) {
-    const res = await fetch(`${this.base}/users?search=${encodeURIComponent(email)}&limit=100`);
-    const data = await res.json();
-    return (data.data || []).find(u => u.email === email.toLowerCase()) || null;
+    return sb.getOne('users', `email=eq.${email.toLowerCase()}`);
   },
 
   async createUser(userData) {
-    const res = await fetch(`${this.base}/users`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData)
-    });
-    return res.json();
+    const data = await sb.insert('users', userData);
+    return data?.[0] || null;
   },
 
   async updateUser(id, updates) {
-    const res = await fetch(`${this.base}/users/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates)
-    });
-    return res.json();
+    const data = await sb.update('users', `id=eq.${id}`, updates);
+    return data?.[0] || null;
   },
 
   async deleteUser(id) {
-    await fetch(`${this.base}/users/${id}`, { method: 'DELETE' });
+    await sb.remove('users', `id=eq.${id}`);
   },
 
-  // ── Invites API
+  // ── Invites
   async getInvites(page = 1, limit = 15) {
-    const res = await fetch(`${this.base}/invites?page=${page}&limit=${limit}&sort=created_at`);
-    return res.json();
+    const data = await sb.query('invites', {
+      limit,
+      offset: (page - 1) * limit,
+      order: 'created_at.desc'
+    });
+    return { data: data || [] };
   },
 
   async getInviteByCode(code) {
-    const res = await fetch(`${this.base}/invites?search=${encodeURIComponent(code)}&limit=50`);
-    const data = await res.json();
-    return (data.data || []).find(i => i.code === code.toUpperCase()) || null;
+    return sb.getOne('invites', `code=eq.${code.toUpperCase()}`);
   },
 
   async createInvite(inviteData) {
-    const res = await fetch(`${this.base}/invites`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(inviteData)
-    });
-    return res.json();
+    const data = await sb.insert('invites', inviteData);
+    return data?.[0] || null;
   },
 
   async updateInvite(id, updates) {
-    const res = await fetch(`${this.base}/invites/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates)
-    });
-    return res.json();
+    const data = await sb.update('invites', `id=eq.${id}`, updates);
+    return data?.[0] || null;
   },
 
   async deleteInvite(id) {
-    await fetch(`${this.base}/invites/${id}`, { method: 'DELETE' });
+    await sb.remove('invites', `id=eq.${id}`);
   },
 
   // ── Auth
@@ -132,41 +155,37 @@ const AuraAPI = {
     if (username.length < 3 || username.length > 30) throw new Error('Username must be between 3 and 30 characters');
     if (password.length < 8) throw new Error('Password must be at least 8 characters');
 
-    // Check invite
     const invite = await this.getInviteByCode(inviteCode);
-    if (!invite || !invite.isActive) throw new Error('Invalid or inactive invite code');
-    if (invite.usedCount >= invite.maxUses) throw new Error('This invite code has been fully used');
-    if (invite.expiresAt && new Date() > new Date(invite.expiresAt)) throw new Error('This invite code has expired');
+    if (!invite || !invite.is_active) throw new Error('Invalid or inactive invite code');
+    if (invite.used_count >= invite.max_uses) throw new Error('This invite code has been fully used');
+    if (invite.expires_at && new Date() > new Date(invite.expires_at)) throw new Error('This invite code has expired');
 
-    // Check uniqueness
     const existingByName = await this.getUserByUsername(username);
     if (existingByName) throw new Error('Username already taken');
     const existingByEmail = await this.getUserByEmail(email);
     if (existingByEmail) throw new Error('Email already registered');
 
-    // Create user
     const user = await this.createUser({
       username: username.toLowerCase(),
       email: email.toLowerCase(),
       password: this.hashPassword(password),
-      displayName: username,
+      display_name: username,
       bio: '',
       badge: '',
       avatar: '',
       role: 'user',
-      socialLinks: '[]',
-      background: JSON.stringify({ type: 'color', value: '#07070d' }),
-      accentColor: '#7c3aed',
-      cardStyle: 'glass',
-      profileEffect: 'none',
+      social_links: '[]',
+      background: JSON.stringify({ type: 'color', value: '#000000' }),
+      accent_color: '#7c3aed',
+      card_style: 'glass',
+      profile_effect: 'none',
       music: JSON.stringify({ enabled: false, url: '', title: '', artist: '', autoplay: false }),
       views: 0,
-      isActive: true,
-      inviteUsed: inviteCode.toUpperCase()
+      is_active: true,
+      invite_used: inviteCode.toUpperCase()
     });
 
-    // Update invite usage
-    await this.updateInvite(invite.id, { usedCount: (invite.usedCount || 0) + 1 });
+    await this.updateInvite(invite.id, { used_count: (invite.used_count || 0) + 1 });
 
     const token = this.generateToken(user.id, 'user');
     localStorage.setItem('aura_token', token);
@@ -179,7 +198,7 @@ const AuraAPI = {
     if (!user) user = await this.getUserByEmail(username);
     if (!user) throw new Error('Invalid credentials');
     if (!this.checkPassword(password, user.password)) throw new Error('Invalid credentials');
-    if (!user.isActive) throw new Error('Account is disabled');
+    if (!user.is_active) throw new Error('Account is disabled');
 
     const token = this.generateToken(user.id, user.role);
     localStorage.setItem('aura_token', token);
@@ -206,7 +225,7 @@ const AuraAPI = {
     return user;
   },
 
-  // ── Helpers for JSON fields
+  // ── Helpers
   parseJSON(str, fallback = []) {
     try { return JSON.parse(str); } catch { return fallback; }
   },
