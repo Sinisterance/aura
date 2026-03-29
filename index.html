@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aura — Your Digital Identity</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+  <style>
+    /* Inline fallback - ensures styles load even if CSS path fails */
+    :root{--bg-primary:#07070d;--bg-secondary:#0d0d1a;--bg-card:rgba(255,255,255,0.04);--bg-card-hover:rgba(255,255,255,0.07);--border:rgba(255,255,255,0.08);--border-glow:rgba(124,58,237,0.4);--text-primary:#f0f0ff;--text-secondary:#8888aa;--text-muted:#55556a;--accent:#7c3aed;--accent-light:#9d5ff3;--accent-glow:rgba(124,58,237,0.3);--accent-pink:#ec4899;--accent-blue:#3b82f6;--success:#10b981;--danger:#ef4444;--warning:#f59e0b;--radius:16px;--radius-sm:10px;--radius-lg:24px;--transition:all 0.3s cubic-bezier(0.4,0,0.2,1);--shadow-glow:0 0 40px rgba(124,58,237,0.2);--font-main:'Inter',system-ui,sans-serif;--font-display:'Space Grotesk',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+    body{font-family:var(--font-main);background:var(--bg-primary);color:var(--text-primary);min-height:100vh;overflow-x:hidden}
+    .bg-canvas{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+    #particleCanvas{position:absolute;inset:0;opacity:0.4}
+    .bg-gradient-orb{position:absolute;border-radius:50%;filter:blur(80px);animation:orbFloat 20s infinite ease-in-out}
+    .orb-1{width:600px;height:600px;background:radial-gradient(circle,rgba(124,58,237,0.15) 0%,transparent 70%);top:-200px;left:-100px}
+    .orb-2{width:500px;height:500px;background:radial-gradient(circle,rgba(236,72,153,0.1) 0%,transparent 70%);bottom:-150px;right:-100px;animation-delay:-7s}
+    .orb-3{width:400px;height:400px;background:radial-gradient(circle,rgba(59,130,246,0.08) 0%,transparent 70%);top:50%;left:50%;animation-delay:-14s}
+    @keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-40px) scale(1.05)}66%{transform:translate(-20px,30px) scale(0.95)}}
+    .navbar{position:fixed;top:0;left:0;right:0;z-index:100;padding:20px 0;transition:var(--transition)}
+    .navbar.scrolled{background:rgba(7,7,13,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 0}
+    .nav-container{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between}
+    .nav-brand{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text-primary);font-family:var(--font-display);font-weight:700;font-size:1.3rem}
+    .brand-icon{color:var(--accent);font-size:1.4rem;filter:drop-shadow(0 0 8px var(--accent))}
+    .nav-actions{display:flex;align-items:center;gap:12px}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),#6d28d9);color:white;border:none;border-radius:12px;padding:10px 24px;font-size:0.9rem;font-weight:600;cursor:pointer;transition:var(--transition);font-family:var(--font-main);position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(124,58,237,0.5)}
+    .btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:12px;padding:10px 20px;font-size:0.9rem;font-weight:500;cursor:pointer;transition:var(--transition);font-family:var(--font-main);display:inline-flex;align-items:center;gap:8px}
+    .btn-ghost:hover{background:var(--bg-card-hover);color:var(--text-primary);border-color:rgba(255,255,255,0.15)}
+    .btn-large{padding:14px 32px;font-size:1rem;border-radius:14px}
+    .btn-full{width:100%;justify-content:center}
+    .glow-pulse{animation:glowPulse 3s ease-in-out infinite}
+    @keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(124,58,237,0.3)}50%{box-shadow:0 0 40px rgba(124,58,237,0.6),0 0 60px rgba(236,72,153,0.2)}}
+    .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:120px 24px 80px;position:relative;z-index:1;gap:80px;flex-wrap:wrap}
+    .hero-content{max-width:560px;flex:1;min-width:300px}
+    .hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.3);border-radius:100px;padding:6px 16px;font-size:0.8rem;color:var(--accent-light);margin-bottom:28px;font-weight:500}
+    .badge-dot{width:7px;height:7px;background:var(--success);border-radius:50%;animation:blink 2s infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+    .hero-title{font-family:var(--font-display);font-size:clamp(2.5rem,6vw,4rem);font-weight:800;line-height:1.1;margin-bottom:20px;letter-spacing:-0.02em}
+    .gradient-text{background:linear-gradient(135deg,var(--accent-light),var(--accent-pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero-subtitle{color:var(--text-secondary);font-size:1.1rem;line-height:1.7;margin-bottom:36px}
+    .hero-cta{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:28px}
+    .hero-preview-url{display:inline-flex;align-items:center;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-family:'Courier New',monospace;font-size:0.9rem}
+    .url-prefix{color:var(--text-muted)}.url-typing{color:var(--accent-light)}.url-cursor{color:var(--accent);animation:blink 1s infinite;margin-left:2px}
+    .hero-previews{flex:1;min-width:280px;max-width:360px;position:relative;height:380px}
+    .preview-card{position:absolute;background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:12px;width:200px;transition:var(--transition);animation:floatCard 6s ease-in-out infinite}
+    .preview-card:hover{transform:translateY(-8px) scale(1.03);z-index:10}
+    .card-1{top:0;left:0;animation-delay:0s}.card-2{top:80px;right:0;animation-delay:-2s}.card-3{bottom:20px;left:60px;animation-delay:-4s}
+    @keyframes floatCard{0%,100%{transform:translateY(0px)}50%{transform:translateY(-12px)}}
+    .preview-avatar{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;color:white;box-shadow:0 0 20px rgba(124,58,237,0.4)}
+    .preview-info{text-align:center}.preview-name{display:block;font-weight:700;font-size:0.95rem}.preview-bio{display:block;font-size:0.75rem;color:var(--text-secondary);margin-top:2px}
+    .preview-links{display:flex;gap:8px}.preview-link{width:32px;height:32px;background:rgba(255,255,255,0.07);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--text-secondary)}
+    .features{position:relative;z-index:1;padding:80px 24px}.container{max-width:1100px;margin:0 auto}
+    .section-title{font-family:var(--font-display);font-size:2.2rem;font-weight:700;text-align:center;margin-bottom:12px}
+    .section-subtitle{text-align:center;color:var(--text-secondary);font-size:1rem;margin-bottom:48px}
+    .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+    .feature-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;transition:var(--transition)}
+    .feature-card:hover{background:var(--bg-card-hover);border-color:rgba(124,58,237,0.3);transform:translateY(-4px);box-shadow:var(--shadow-glow)}
+    .feature-icon{width:48px;height:48px;background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(236,72,153,0.1));border:1px solid rgba(124,58,237,0.3);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--accent-light);margin-bottom:16px}
+    .feature-card h3{font-size:1rem;font-weight:600;margin-bottom:8px}.feature-card p{color:var(--text-secondary);font-size:0.875rem;line-height:1.6}
+    .footer{text-align:center;padding:40px 24px;color:var(--text-muted);font-size:0.85rem;position:relative;z-index:1}
+    .glass-card{background:rgba(13,13,26,0.85);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius-lg)}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+    .modal-overlay.active{display:flex;animation:fadeIn 0.3s ease}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .modal{width:100%;max-width:420px;padding:36px;position:relative;animation:slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+    @keyframes slideUp{from{opacity:0;transform:translateY(30px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .modal-close{position:absolute;top:16px;right:16px;width:32px;height:32px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.8rem;transition:var(--transition)}
+    .modal-close:hover{background:var(--bg-card-hover);color:var(--text-primary)}
+    .modal-header{text-align:center;margin-bottom:28px}
+    .modal-icon{display:block;font-size:2rem;color:var(--accent);filter:drop-shadow(0 0 10px var(--accent));margin-bottom:12px}
+    .modal-header h2{font-family:var(--font-display);font-size:1.5rem;font-weight:700;margin-bottom:6px}
+    .modal-header p{color:var(--text-secondary);font-size:0.9rem}
+    .modal-form{display:flex;flex-direction:column;gap:18px}
+    .form-group{display:flex;flex-direction:column;gap:8px}
+    .form-group label{font-size:0.82rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;display:flex;align-items:center;gap:8px}
+    .required-badge{background:rgba(124,58,237,0.15);color:var(--accent-light);border:1px solid rgba(124,58,237,0.3);border-radius:6px;padding:2px 8px;font-size:0.7rem;text-transform:none;letter-spacing:0}
+    .input-wrapper{position:relative;display:flex;align-items:center}
+    .input-icon{position:absolute;left:14px;color:var(--text-muted);font-size:0.85rem;pointer-events:none;z-index:1}
+    .input-wrapper input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:12px 44px 12px 38px;color:var(--text-primary);font-size:0.9rem;font-family:var(--font-main);transition:var(--transition);outline:none}
+    .input-wrapper input:focus{border-color:var(--accent);background:rgba(124,58,237,0.06);box-shadow:0 0 0 3px var(--accent-glow)}
+    .input-wrapper input::placeholder{color:var(--text-muted)}
+    .toggle-pw{position:absolute;right:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.8rem;padding:4px;transition:color 0.2s}
+    .toggle-pw:hover{color:var(--text-primary)}
+    .input-status{position:absolute;right:14px;font-size:0.8rem}.input-status.valid{color:var(--success)}.input-status.invalid{color:var(--danger)}
+    .username-preview{font-size:0.8rem;color:var(--text-muted);padding:4px 0 0 2px}
+    .url-label{color:var(--text-muted)}#previewSlug{color:var(--accent-light);font-weight:600}
+    .pw-strength{height:3px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin-top:4px}
+    .pw-bar{height:100%;border-radius:3px;transition:width 0.3s,background 0.3s;width:0%}
+    .form-error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:10px 14px;font-size:0.85rem;color:#fca5a5;display:none}
+    .form-error.show{display:block}
+    .form-switch{text-align:center;font-size:0.85rem;color:var(--text-secondary)}
+    .form-switch a{color:var(--accent-light);text-decoration:none;font-weight:600}
+    .form-switch a:hover{text-decoration:underline}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(124,58,237,0.4);border-radius:3px}
+    @media(max-width:768px){.hero{flex-direction:column;gap:40px;text-align:center}.hero-cta{justify-content:center}.hero-previews{height:300px}.preview-card{width:170px;padding:16px}.card-2{right:10px}.hero-badge{margin:0 auto 24px}}
+  </style>
+</head>
+<body>
+
+  <!-- Animated Background -->
+  <div class="bg-canvas">
+    <canvas id="particleCanvas"></canvas>
+    <div class="bg-gradient-orb orb-1"></div>
+    <div class="bg-gradient-orb orb-2"></div>
+    <div class="bg-gradient-orb orb-3"></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-brand">
+        <span class="brand-icon">✦</span>
+        <span>Aura</span>
+      </a>
+      <div class="nav-actions">
+        <button class="btn-ghost" id="loginBtn">Log in</button>
+        <button class="btn-primary" id="registerBtn">Get Started</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        Now in Beta
+      </div>
+      <h1 class="hero-title">
+        Your digital identity,<br />
+        <span class="gradient-text">beautifully crafted</span>
+      </h1>
+      <p class="hero-subtitle">
+        One stunning link in bio that showcases everything you are.
+        Customizable profiles, music player, analytics and more.
+      </p>
+      <div class="hero-cta">
+        <button class="btn-primary btn-large glow-pulse" id="heroCta">
+          <i class="fas fa-magic"></i> Create Your Aura
+        </button>
+        <button class="btn-ghost btn-large" id="heroLogin">Sign In</button>
+      </div>
+      <div class="hero-preview-url">
+        <span class="url-prefix">aura.bio/</span>
+        <span class="url-typing" id="typingText">yourname</span>
+        <span class="url-cursor">|</span>
+      </div>
+    </div>
+
+<div class="hero-previews">
+  <div class="preview-card card-1">
+    <div class="preview-avatar" style="background:none;padding:0;overflow:hidden;">
+      <img src="https://i.pinimg.com/1200x/50/0d/ad/500dad5b43b5009ef6f18985348d835c.jpg" alt="Alex Rivera" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />
+    </div>
+    <div class="preview-info">
+      <span class="preview-name">Aziz</span>
+      <span class="preview-bio">Designer & Creator</span>
+    </div>
+    <div class="preview-links">
+      <div class="preview-link"><i class="fab fa-instagram"></i></div>
+      <div class="preview-link"><i class="fab fa-twitter"></i></div>
+      <div class="preview-link"><i class="fab fa-tiktok"></i></div>
+    </div>
+  </div>
+  <div class="preview-card card-2">
+    <div class="preview-avatar" style="background:none;padding:0;overflow:hidden;">
+      <img src="https://cdn.discordapp.com/avatars/1243925840362864725/3b21b2f3d03e7f462639576d4baf1bd7.webp?size=1024" alt="Aziz" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />
+    </div>
+    <div class="preview-info">
+      <span class="preview-name">null</span>
+      <span class="preview-bio">Developer & Gamer</span>
+    </div>
+    <div class="preview-links">
+      <div class="preview-link"><i class="fab fa-github"></i></div>
+      <div class="preview-link"><i class="fab fa-discord"></i></div>
+    </div>
+  </div>
+  <div class="preview-card card-3">
+    <div class="preview-avatar" style="background:none;padding:0;overflow:hidden;">
+      <img src="https://media.discordapp.net/attachments/1449923623275204744/1484255492791472392/IMG_6080.jpg?ex=69ca1665&is=69c8c4e5&hm=b30d9531895869eda83df7af8ae41576a32c13df62921410692d173e291780cd&=&format=webp&width=960&height=960" alt="Maya K." style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />
+    </div>
+    <div class="preview-info">
+      <span class="preview-name">Maya K.</span>
+      <span class="preview-bio">Artist & Musician</span>
+    </div>
+    <div class="preview-links">
+      <div class="preview-link"><i class="fab fa-spotify"></i></div>
+      <div class="preview-link"><i class="fab fa-youtube"></i></div>
+    </div>
+  </div>
+</div>
+</section>
+
+  <!-- Features -->
+  <section class="features">
+    <div class="container">
+      <h2 class="section-title">Everything you need</h2>
+      <p class="section-subtitle">Powerful features to make your profile shine</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-palette"></i></div>
+          <h3>Full Customization</h3>
+          <p>Colors, gradients, animated backgrounds, card styles, and profile effects. Make it truly yours.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-music"></i></div>
+          <h3>Music Player</h3>
+          <p>Add a music player to your profile. Let visitors vibe with your favorite track.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-chart-bar"></i></div>
+          <h3>Analytics</h3>
+          <p>Track profile views and see how your audience grows over time.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-link"></i></div>
+          <h3>All Your Links</h3>
+          <p>Instagram, TikTok, Discord, GitHub, Spotify and 15+ more platforms supported.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+          <h3>Lightning Fast</h3>
+          <p>Optimized for speed. Your profile loads instantly on any device or connection.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+          <h3>Mobile First</h3>
+          <p>Designed to look perfect on phones, tablets and desktops alike.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p><span style="color:var(--accent)">✦</span> Aura — Your digital identity</p>
+  </footer>
+
+  <!-- Login Modal -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal glass-card">
+      <button class="modal-close" id="closeLogin"><i class="fas fa-times"></i></button>
+      <div class="modal-header">
+        <span class="modal-icon">✦</span>
+        <h2>Welcome back</h2>
+        <p>Sign in to your Aura account</p>
+      </div>
+      <form class="modal-form" id="loginForm">
+        <div class="form-group">
+          <label><i class="fas fa-user"></i> Username or Email</label>
+          <div class="input-wrapper">
+            <i class="input-icon fas fa-at"></i>
+            <input type="text" id="loginUsername" placeholder="username or email" autocomplete="username" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-lock"></i> Password</label>
+          <div class="input-wrapper">
+            <i class="input-icon fas fa-lock"></i>
+            <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required />
+            <button type="button" class="toggle-pw" id="toggleLoginPw"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="form-error" id="loginError"></div>
+        <button type="submit" class="btn-primary btn-full" id="loginSubmit">
+          <i class="fas fa-sign-in-alt"></i> Sign In
+        </button>
+        <p class="form-switch">Don't have an account? <a href="#" id="switchToRegister">Create one</a></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Register Modal -->
+  <div class="modal-overlay" id="registerModal">
+    <div class="modal glass-card">
+      <button class="modal-close" id="closeRegister"><i class="fas fa-times"></i></button>
+      <div class="modal-header">
+        <span class="modal-icon">✦</span>
+        <h2>Create your Aura</h2>
+        <p>Join with an invite code</p>
+      </div>
+      <form class="modal-form" id="registerForm">
+        <div class="form-group">
+          <label>
+            <i class="fas fa-ticket"></i> Invite Code
+            <span class="required-badge">Required</span>
+          </label>
+          <div class="input-wrapper">
+            <i class="input-icon fas fa-ticket"></i>
+            <input type="text" id="regInvite" placeholder="XXXXXXXX" style="text-transform:uppercase;letter-spacing:2px;" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-at"></i> Username</label>
+          <div class="input-wrapper">
+            <i class="input-icon fas fa-at"></i>
+            <input type="text" id="regUsername" placeholder="coolname" autocomplete="username" required maxlength="30" />
+            <span class="input-status" id="usernameStatus"></span>
+          </div>
+          <div class="username-preview">
+            <span class="url-label">aura.bio/</span><span id="previewSlug">yourname</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-envelope"></i> Email</label>
+          <div class="input-wrapper">
+            <i class="input-icon fas fa-envelope"></i>
+            <input type="email" id="regEmail" placeholder="you@example.com" autocomplete="email" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-lock"></i> Password</label>
+          <div class="input-wrapper">
+            <i class="input-icon fas fa-lock"></i>
+            <input type="password" id="regPassword" placeholder="Min. 8 characters" autocomplete="new-password" required />
+            <button type="button" class="toggle-pw" id="toggleRegPw"><i class="fas fa-eye"></i></button>
+          </div>
+          <div class="pw-strength"><div class="pw-bar" id="pwBar"></div></div>
+        </div>
+        <div class="form-error" id="registerError"></div>
+        <button type="submit" class="btn-primary btn-full" id="registerSubmit">
+          <i class="fas fa-magic"></i> Create My Aura
+        </button>
+        <p class="form-switch">Already have an account? <a href="#" id="switchToLogin">Sign in</a></p>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

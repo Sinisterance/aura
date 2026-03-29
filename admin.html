@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — Aura</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet" />
+  <style>
+    /* ── Global Variables */
+    :root{--bg-primary:#07070d;--bg-secondary:#0d0d1a;--bg-card:rgba(255,255,255,0.04);--bg-card-hover:rgba(255,255,255,0.07);--border:rgba(255,255,255,0.08);--text-primary:#f0f0ff;--text-secondary:#8888aa;--text-muted:#55556a;--accent:#7c3aed;--accent-light:#9d5ff3;--accent-glow:rgba(124,58,237,0.3);--accent-pink:#ec4899;--success:#10b981;--danger:#ef4444;--warning:#f59e0b;--radius:16px;--transition:all 0.3s cubic-bezier(0.4,0,0.2,1);--font-main:'Inter',system-ui,sans-serif;--font-display:'Space Grotesk',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--font-main);background:var(--bg-primary);color:var(--text-primary);min-height:100vh;overflow-x:hidden}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(124,58,237,0.4);border-radius:3px}
+
+    /* ── Buttons */
+    .btn-primary{background:linear-gradient(135deg,var(--accent),#6d28d9);color:white;border:none;border-radius:12px;padding:10px 24px;font-size:0.9rem;font-weight:600;cursor:pointer;transition:var(--transition);font-family:var(--font-main);display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(124,58,237,0.5)}
+    .btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:12px;padding:10px 20px;font-size:0.9rem;font-weight:500;cursor:pointer;transition:var(--transition);font-family:var(--font-main);display:inline-flex;align-items:center;gap:8px}
+    .btn-ghost:hover{background:var(--bg-card-hover);color:var(--text-primary)}
+    .glass-card{background:rgba(13,13,26,0.85);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,0.1);border-radius:24px}
+
+    /* ── Dashboard Layout */
+    .dashboard-page{display:flex;min-height:100vh;background:var(--bg-primary)}
+
+    /* ── Sidebar */
+    .sidebar{width:220px;min-height:100vh;background:rgba(13,13,26,0.95);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;transition:transform 0.3s ease}
+    .sidebar-brand{display:flex;align-items:center;gap:10px;padding:24px 20px;border-bottom:1px solid var(--border);font-family:var(--font-display);font-weight:700;font-size:1.2rem}
+    .brand-icon{color:var(--accent);font-size:1.4rem;filter:drop-shadow(0 0 8px var(--accent))}
+    .sidebar-nav{flex:1;padding:16px 12px;display:flex;flex-direction:column;gap:4px}
+    .sidebar-footer{padding:12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--text-secondary);text-decoration:none;font-size:0.875rem;font-weight:500;transition:var(--transition);cursor:pointer;background:none;border:none;width:100%;font-family:var(--font-main);text-align:left}
+    .nav-item:hover,.nav-item.active{background:rgba(124,58,237,0.12);color:var(--text-primary)}
+    .nav-item.active{color:var(--accent-light);border-left:2px solid var(--accent)}
+    .nav-item i{width:16px;text-align:center;font-size:0.85rem}
+    .logout-btn{color:var(--danger)!important}
+    .logout-btn:hover{background:rgba(239,68,68,0.1)!important}
+
+    /* ── Mobile Header */
+    .mobile-header{display:none;position:fixed;top:0;left:0;right:0;background:rgba(13,13,26,0.95);border-bottom:1px solid var(--border);padding:14px 20px;align-items:center;justify-content:space-between;z-index:100;backdrop-filter:blur(20px)}
+    .sidebar-toggle,.btn-sm{background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary);border-radius:8px;padding:8px 14px;font-size:0.82rem;cursor:pointer;font-family:var(--font-main);font-weight:500;transition:var(--transition);display:inline-flex;align-items:center;gap:6px}
+    .btn-primary.btn-sm{background:linear-gradient(135deg,var(--accent),#6d28d9);border-color:transparent;color:white}
+
+    /* ── Main Content */
+    .dashboard-main{margin-left:220px;flex:1;padding:32px;min-height:100vh}
+    .admin-main{max-width:calc(100% - 220px)}
+
+    /* ── Tabs */
+    .tab-content{display:none;animation:fadeInTab 0.3s ease}
+    .tab-content.active{display:block}
+    @keyframes fadeInTab{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .tab-header{margin-bottom:28px}
+    .tab-header h1{font-family:var(--font-display);font-size:1.8rem;font-weight:700;margin-bottom:4px}
+    .tab-header p{color:var(--text-secondary);font-size:0.9rem}
+
+    /* ── Settings Cards */
+    .settings-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;transition:border-color 0.3s;margin-bottom:0}
+    .settings-card:hover{border-color:rgba(124,58,237,0.2)}
+    .settings-card h3{font-size:0.95rem;font-weight:600;margin-bottom:20px;display:flex;align-items:center;gap:8px;color:var(--text-primary)}
+    .settings-card h3 i{color:var(--accent-light)}
+
+    /* ── Stats */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px}
+    .stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;display:flex;align-items:center;gap:16px;transition:var(--transition)}
+    .stat-card:hover{background:var(--bg-card-hover);border-color:rgba(124,58,237,0.3);transform:translateY(-2px)}
+    .stat-icon{width:48px;height:48px;background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(236,72,153,0.1));border:1px solid rgba(124,58,237,0.3);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:var(--accent-light);flex-shrink:0}
+    .stat-value{display:block;font-size:1.8rem;font-weight:800;font-family:var(--font-display);color:var(--text-primary);line-height:1.1}
+    .stat-label{display:block;font-size:0.78rem;color:var(--text-secondary);margin-top:2px}
+
+    /* ── Forms */
+    .form-group-inline{display:flex;flex-direction:column;gap:6px}
+    .form-group-inline label{font-size:0.8rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em}
+    .form-group-inline input,.form-group-inline select{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text-primary);font-size:0.875rem;font-family:var(--font-main);transition:var(--transition);outline:none;width:100%}
+    .form-group-inline input:focus,.form-group-inline select:focus{border-color:var(--accent);background:rgba(124,58,237,0.06);box-shadow:0 0 0 3px var(--accent-glow)}
+    .form-group-inline input::placeholder{color:var(--text-muted)}
+
+    /* ── Invite Create Form */
+    .invite-create-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;align-items:end}
+    .invite-create-form .btn-primary{align-self:end;white-space:nowrap}
+
+    /* ── Table */
+    .table-wrapper{overflow-x:auto;border-radius:12px;margin-top:16px}
+    .admin-table{width:100%;border-collapse:collapse;font-size:0.85rem}
+    .admin-table th{background:rgba(255,255,255,0.04);color:var(--text-secondary);font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;padding:12px 16px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+    .admin-table td{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text-primary);vertical-align:middle}
+    .admin-table tr:last-child td{border-bottom:none}
+    .admin-table tr:hover td{background:rgba(124,58,237,0.04)}
+    .table-empty{text-align:center;padding:40px!important;color:var(--text-muted)}
+
+    /* ── Code badge */
+    .code-badge{font-family:'Courier New',monospace;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);border-radius:6px;padding:4px 10px;font-size:0.8rem;font-weight:700;color:var(--accent-light);letter-spacing:0.1em}
+
+    /* ── Status badges */
+    .status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:600}
+    .status-active{background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:#34d399}
+    .status-inactive{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#f87171}
+    .status-used{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:#fbbf24}
+    .role-admin{background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);color:var(--accent-light)}
+    .role-user{background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text-secondary)}
+
+    /* ── Action buttons */
+    .table-actions{display:flex;gap:6px;align-items:center}
+    .action-btn{padding:5px 10px;border-radius:7px;font-size:0.72rem;font-weight:600;cursor:pointer;border:1px solid;transition:var(--transition);font-family:var(--font-main);white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+    .action-btn-danger{background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.3);color:#f87171}
+    .action-btn-danger:hover{background:rgba(239,68,68,0.2)}
+    .action-btn-success{background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.3);color:#34d399}
+    .action-btn-success:hover{background:rgba(16,185,129,0.2)}
+    .action-btn-warning{background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.3);color:#fbbf24}
+    .action-btn-warning:hover{background:rgba(245,158,11,0.2)}
+    .action-btn-ghost{background:rgba(255,255,255,0.04);border-color:var(--border);color:var(--text-secondary)}
+    .action-btn-ghost:hover{background:rgba(255,255,255,0.08);color:var(--text-primary)}
+
+    /* ── Pagination */
+    .pagination{display:flex;justify-content:center;gap:8px;padding:16px 0 4px;flex-wrap:wrap}
+    .page-btn{width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;font-size:0.82rem;font-family:var(--font-main);transition:var(--transition)}
+    .page-btn:hover,.page-btn.active{background:rgba(124,58,237,0.15);border-color:rgba(124,58,237,0.3);color:var(--accent-light)}
+
+    /* ── Table toolbar */
+    .table-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    .search-box{position:relative;display:flex;align-items:center}
+    .search-icon-inp{position:absolute;left:12px;color:var(--text-muted);font-size:0.8rem}
+    .search-box input{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:8px 14px 8px 34px;color:var(--text-primary);font-size:0.85rem;font-family:var(--font-main);outline:none;width:260px;transition:var(--transition)}
+    .search-box input:focus{border-color:var(--accent);background:rgba(124,58,237,0.06);box-shadow:0 0 0 3px rgba(124,58,237,0.3)}
+    .user-link{color:var(--accent-light);text-decoration:none;font-weight:600}
+    .user-link:hover{text-decoration:underline}
+
+    /* ── Uses bar */
+    .uses-bar{display:flex;align-items:center;gap:6px;font-size:0.8rem}
+    .uses-progress{width:50px;height:4px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden}
+    .uses-fill{height:100%;border-radius:4px;background:var(--accent)}
+
+    /* ── Toast */
+    .toast{position:fixed;bottom:28px;right:28px;background:rgba(13,13,26,0.95);border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:0.875rem;color:var(--text-primary);z-index:9999;transform:translateY(100px);opacity:0;transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1);max-width:320px;display:flex;align-items:center;gap:10px}
+    .toast.show{transform:translateY(0);opacity:1}
+    .toast.success{border-color:rgba(16,185,129,0.4)}
+    .toast.error{border-color:rgba(239,68,68,0.4)}
+
+    /* ── Responsive */
+    @media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.mobile-header{display:flex}.dashboard-main{margin-left:0;padding:80px 16px 24px;max-width:100%}.admin-main{max-width:100%}.invite-create-form{grid-template-columns:1fr}.search-box input{width:180px}.table-toolbar{flex-direction:column;align-items:flex-start}}
+  </style>
+</head>
+<body class="dashboard-page">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-icon">✦</span>
+      <span class="brand-name">Aura Admin</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-tab="stats">
+        <i class="fas fa-chart-pie"></i><span>Overview</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="invites">
+        <i class="fas fa-ticket"></i><span>Invite Codes</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="users">
+        <i class="fas fa-users"></i><span>Users</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="dashboard.html" class="nav-item">
+        <i class="fas fa-arrow-left"></i><span>Dashboard</span>
+      </a>
+      <button class="nav-item logout-btn" id="logoutBtn">
+        <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Mobile header -->
+  <header class="mobile-header">
+    <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+    <span class="brand-icon">✦</span>
+    <span style="font-size:0.8rem;color:var(--text-secondary);">Admin</span>
+  </header>
+
+  <main class="dashboard-main admin-main">
+
+    <!-- ── Overview Tab -->
+    <div class="tab-content active" id="tab-stats">
+      <div class="tab-header">
+        <h1><i class="fas fa-shield-alt" style="color:var(--accent-light);margin-right:8px;"></i>Admin Overview</h1>
+        <p>Platform statistics and health</p>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-users"></i></div>
+          <div class="stat-info">
+            <span class="stat-value" id="statTotalUsers">—</span>
+            <span class="stat-label">Total Users</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+          <div class="stat-info">
+            <span class="stat-value" id="statActiveUsers">—</span>
+            <span class="stat-label">Active Users</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-ticket"></i></div>
+          <div class="stat-info">
+            <span class="stat-value" id="statActiveInvites">—</span>
+            <span class="stat-label">Active Invites</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-eye"></i></div>
+          <div class="stat-info">
+            <span class="stat-value" id="statTotalViews">—</span>
+            <span class="stat-label">Total Profile Views</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-user-plus"></i></div>
+          <div class="stat-info">
+            <span class="stat-value" id="statRecentUsers">—</span>
+            <span class="stat-label">New Users (7d)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Invites Tab -->
+    <div class="tab-content" id="tab-invites">
+      <div class="tab-header">
+        <h1>Invite Codes</h1>
+        <p>Create and manage invite codes</p>
+      </div>
+
+      <!-- Create Invite -->
+      <div class="settings-card" style="margin-bottom:20px;">
+        <h3><i class="fas fa-plus-circle"></i> Create Invite Code</h3>
+        <div class="invite-create-form">
+          <div class="form-group-inline">
+            <label>Code (leave blank to auto-generate)</label>
+            <input type="text" id="newCode" placeholder="e.g. LAUNCH2024" style="text-transform:uppercase;letter-spacing:2px;" maxlength="20" />
+          </div>
+          <div class="form-group-inline">
+            <label>Max Uses</label>
+            <input type="number" id="newMaxUses" value="1" min="1" max="999" />
+          </div>
+          <div class="form-group-inline">
+            <label>Expires At (optional)</label>
+            <input type="datetime-local" id="newExpires" />
+          </div>
+          <div class="form-group-inline">
+            <label>Note</label>
+            <input type="text" id="newNote" placeholder="Internal note about this code" maxlength="100" />
+          </div>
+          <button class="btn-primary" id="createInviteBtn"><i class="fas fa-plus"></i> Create Code</button>
+        </div>
+      </div>
+
+      <!-- Invites Table -->
+      <div class="settings-card">
+        <h3><i class="fas fa-list"></i> All Invite Codes</h3>
+        <div class="table-wrapper">
+          <table class="admin-table" id="invitesTable">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Uses</th>
+                <th>Status</th>
+                <th>Expires</th>
+                <th>Note</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="invitesBody">
+              <tr><td colspan="6" class="table-empty">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="invitesPagination"></div>
+      </div>
+    </div>
+
+    <!-- ── Users Tab -->
+    <div class="tab-content" id="tab-users">
+      <div class="tab-header">
+        <h1>Users</h1>
+        <p>Manage all registered users</p>
+      </div>
+
+      <div class="settings-card">
+        <div class="table-toolbar">
+          <h3><i class="fas fa-users"></i> All Users</h3>
+          <div class="search-box">
+            <i class="fas fa-search search-icon-inp"></i>
+            <input type="text" id="userSearch" placeholder="Search by username or email..." />
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="admin-table" id="usersTable">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Views</th>
+                <th>Joined</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody">
+              <tr><td colspan="7" class="table-empty">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="usersPagination"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
