@@ -203,7 +203,7 @@ document.getElementById('avatarInput')?.addEventListener('change', async (e) => 
     toast('Avatar updated!');
     updatePreview();
 
-  } catch { toast('Failed to upload avatar', 'error'); }
+  } catch (err) { console.error('Avatar upload error:', err); toast('Failed to upload avatar', 'error'); }
 });
 
 document.getElementById('removeAvatarBtn')?.addEventListener('click', async () => {
