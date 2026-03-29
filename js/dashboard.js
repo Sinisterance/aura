@@ -111,14 +111,8 @@ function applyUserData() {
 
 // ── Save updated user to API
 async function saveUser(updates) {
-  const id = userData.id || userData.id;
-  const result = await fetch(`tables/users/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(updates)
-  });
-  const updated = await result.json();
-  userData = updated;
+  const updated = await AuraAPI.updateUser(userData.id, updates);
+  userData = { ...userData, ...updates };
   return updated;
 }
 
