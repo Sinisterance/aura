@@ -252,7 +252,7 @@
         <p>Customize how people see you</p>
       </div>
       <div class="settings-grid">
-<!-- Avatar -->
+        <!-- Avatar -->
         <div class="settings-card">
           <h3><i class="fas fa-image"></i> Avatar</h3>
           <div class="avatar-section">
@@ -267,9 +267,13 @@
               <input type="file" id="avatarInput" accept="image/*" style="display:none;" />
               <button class="btn-primary btn-sm" id="uploadAvatarBtn"><i class="fas fa-upload"></i> Upload Photo</button>
               <button class="btn-ghost btn-sm" id="removeAvatarBtn"><i class="fas fa-trash"></i> Remove</button>
+              <p class="hint">Or paste an image URL below</p>
+        
+            
             </div>
           </div>
         </div>
+
         <!-- Basic Info -->
         <div class="settings-card">
           <h3><i class="fas fa-id-card"></i> Basic Info</h3>
@@ -284,7 +288,10 @@
             </div>
             <div class="form-group-inline">
               <label>Badge / Role</label>
-              <input type="text" id="badge" placeholder="e.g. Developer, Artist, Creator" maxlength="30" />
+              <div style="display:flex;gap:10px;align-items:center;">
+                <input type="text" id="badge" placeholder="e.g. Developer, Artist, Creator" maxlength="30" style="flex:1;" />
+                <input type="color" id="badgeColor" value="#7c3aed" class="color-picker" title="Badge Color" />
+              </div>
             </div>
             <button class="btn-primary" id="saveProfileBtn"><i class="fas fa-save"></i> Save Changes</button>
           </div>
@@ -480,10 +487,40 @@
               <span class="toggle-slider"></span>
             </label>
           </div>
-          <div class="form-group-inline">
-            <label>Audio URL</label>
-            <input type="url" id="musicUrl" placeholder="https://... (mp3, ogg, wav)" class="full-input" />
+
+          <!-- Music Source Tabs -->
+          <div class="bg-type-tabs" style="margin-bottom:8px;">
+            <button class="bg-tab active" id="musicTabYt" onclick="switchMusicTab('youtube')"><i class="fab fa-youtube"></i> YouTube</button>
+            <button class="bg-tab" id="musicTabMp3" onclick="switchMusicTab('mp3')"><i class="fas fa-file-audio"></i> MP3 File</button>
+            <button class="bg-tab" id="musicTabUrl" onclick="switchMusicTab('url')"><i class="fas fa-link"></i> Direct URL</button>
           </div>
+
+          <!-- YouTube Tab -->
+          <div id="musicSrcYoutube" class="bg-option active">
+            <div class="form-group-inline">
+              <label>YouTube Link</label>
+              <input type="url" id="musicYoutubeUrl" placeholder="https://www.youtube.com/watch?v=..." class="full-input" />
+            </div>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;">⚠️ YouTube audio only works if the video allows embedding. For best results use a direct MP3 link.</p>
+          </div>
+
+          <!-- MP3 Upload Tab -->
+          <div id="musicSrcMp3" class="bg-option" style="display:none;flex-direction:column;gap:10px;">
+            <div class="form-group-inline">
+              <label>Upload MP3 / MP4</label>
+              <input type="file" id="musicFileInput" accept="audio/*,video/mp4" class="full-input" style="padding:8px;" />
+            </div>
+            <p style="font-size:0.78rem;color:var(--text-muted);">⚠️ الملف يُشغَّل محلياً فقط. للنشر استخدم رابط مباشر.</p>
+          </div>
+
+          <!-- Direct URL Tab -->
+          <div id="musicSrcUrl" class="bg-option" style="display:none;flex-direction:column;gap:10px;">
+            <div class="form-group-inline">
+              <label>Direct Audio URL (mp3, ogg, wav)</label>
+              <input type="url" id="musicUrl" placeholder="https://example.com/song.mp3" class="full-input" />
+            </div>
+          </div>
+
           <div class="form-group-inline">
             <label>Song Title</label>
             <input type="text" id="musicTitle" placeholder="Song name" maxlength="60" />
@@ -590,5 +627,71 @@
 
   <script src="js/api.js"></script>
   <script src="js/dashboard.js"></script>
-</body>
+  <script>
+    // ── Fix 1: Badge Color
+    document.getElementById('badgeColor')?.addEventListener('input', (e) => {
+      const color = e.target.value;
+      const badge = document.getElementById('pfBadge');
+      if (badge) {
+        badge.style.background = color + '26';
+        badge.style.borderColor = color + '4d';
+        badge.style.color = color;
+      }
+    });
+
+    // ── Fix 2: View Profile correct URL
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const uid = localStorage.getItem('aura_uid');
+        if (uid) {
+          AuraAPI.getUserById(uid).then(user => {
+            if (user?.username) {
+              const btn = document.getElementById('viewProfileBtn');
+              if (btn) btn.href = `profile.html?u=${user.username}`;
+            }
+          });
+        }
+      }, 1000);
+    });
+
+    // ── Fix 3: Music tab switcher
+    function switchMusicTab(tab) {
+      document.getElementById('musicSrcYoutube').style.display = 'none';
+      document.getElementById('musicSrcMp3').style.display = 'none';
+      document.getElementById('musicSrcUrl').style.display = 'none';
+      document.getElementById('musicTabYt').classList.remove('active');
+      document.getElementById('musicTabMp3').classList.remove('active');
+      document.getElementById('musicTabUrl').classList.remove('active');
+
+      if (tab === 'youtube') {
+        document.getElementById('musicSrcYoutube').style.display = 'flex';
+        document.getElementById('musicTabYt').classList.add('active');
+      } else if (tab === 'mp3') {
+        document.getElementById('musicSrcMp3').style.display = 'flex';
+        document.getElementById('musicTabMp3').classList.add('active');
+        // Handle file selection
+        document.getElementById('musicFileInput').onchange = (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            const url = URL.createObjectURL(file);
+            document.getElementById('musicUrl').value = url;
+            if (!document.getElementById('musicTitle').value)
+              document.getElementById('musicTitle').value = file.name.replace(/\.[^/.]+$/, '');
+          }
+        };
+      } else {
+        document.getElementById('musicSrcUrl').style.display = 'flex';
+        document.getElementById('musicTabUrl').classList.add('active');
+      }
+    }
+
+    // Handle YouTube URL → extract audio via embed
+    document.getElementById('musicYoutubeUrl')?.addEventListener('input', (e) => {
+      const url = e.target.value;
+      const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+      if (match) {
+        document.getElementById('musicUrl').value = `https://www.youtube.com/embed/${match[1]}?autoplay=1`;
+      }
+    });
+  </script>
 </html>
